@@ -27,6 +27,12 @@ function! s:system_copy(type, ...) abort
     silent exe "normal! `[v`]y"
   endif
   let command = s:CopyCommandForCurrentOS()
+  if empty(command)
+    if g:system_copy_silent == 0
+      echohl ErrorMsg | echon 'error: system clipboard not found' | echohl None
+    endif
+    return
+  endif
   silent call system(command, getreg('@'))
   " Call OSC52 copy
   if exists("g:system_copy_enable_osc52") && g:system_copy_enable_osc52 > 0 && exists('*YankOSC52')
@@ -106,7 +112,7 @@ function! s:CopyCommandForCurrentOS()
   elseif os == s:linux
     if !empty($WAYLAND_DISPLAY)
       return 'wl-copy'
-    else
+    elseif !empty($DISPLAY)
       return 'xsel --clipboard --input'
     endif
   endif
@@ -124,7 +130,7 @@ function! s:PasteCommandForCurrentOS()
   elseif os == s:linux
     if !empty($WAYLAND_DISPLAY)
       return 'wl-paste -n'
-    else
+    elseif !empty($DISPLAY)
       return 'xsel --clipboard --output'
     endif
   endif
